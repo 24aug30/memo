@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14171c">
+<meta name="mobile-web-app-capable" content="yes">
+<title>소리메모</title>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#fff;--ink:#1b1e24;--sub:#6b7280;--line:#e3e6ea;
+  --personal:#1f9d6b;--personal-soft:#e3f5ed;
+  --company:#2f6fd6;--company-soft:#e4edfb;
+  --danger:#d64545;--warn:#b7791f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171c;--card:#1d2128;--ink:#eef0f3;--sub:#9aa3ae;--line:#2c323b;
+    --personal-soft:#173a2c;--company-soft:#1b2d4d;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;font-size:16px;line-height:1.5}
+#app{max-width:640px;margin:0 auto;padding:16px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+header h1{font-size:20px;margin:0}
+button{font:inherit;cursor:pointer;border:none;border-radius:10px}
+.icon-btn{background:transparent;color:var(--sub);font-size:15px;padding:6px 10px}
+.rec-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+.rec-btn{padding:26px 8px;font-size:19px;font-weight:700;color:#fff}
+.rec-btn.personal{background:var(--personal)}
+.rec-btn.company{background:var(--company)}
+.text-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.text-btn{padding:10px;background:var(--card);color:var(--sub);border:1px solid var(--line);font-size:14px}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+.tab{padding:7px 14px;background:var(--card);border:1px solid var(--line);color:var(--sub);font-size:14px}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.chip{white-space:nowrap;padding:4px 10px;border-radius:999px;font-size:13px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
+.chip.on{border-color:var(--ink);color:var(--ink);font-weight:600}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
+textarea{min-height:160px;resize:vertical}
+.search{margin-bottom:12px}
+.item{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;border-left:5px solid var(--line);cursor:pointer}
+.item.personal{border-left-color:var(--personal)}
+.item.company{border-left-color:var(--company)}
+.item .t{font-weight:600}
+.item .m{font-size:13px;color:var(--sub);margin-top:2px}
+.badge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;margin-right:6px}
+.badge.personal{background:var(--personal-soft);color:var(--personal)}
+.badge.company{background:var(--company-soft);color:var(--company)}
+.status{font-size:12px;color:var(--warn)}
+.status.err{color:var(--danger)}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--sub);font-weight:600}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.todo{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line)}
+.todo:last-child{border-bottom:none}
+.todo input[type=checkbox]{width:20px;height:20px;margin-top:2px;flex:none}
+.todo.done span{text-decoration:line-through;color:var(--sub)}
+.ev{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.ev .grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:6px;margin:6px 0}
+.ev .grid input{padding:7px;font-size:14px}
+.primary{background:var(--ink);color:var(--bg);padding:10px 14px;font-weight:600}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);padding:9px 12px}
+.danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:9px 12px}
+.small{font-size:13px;padding:6px 10px}
+.added{color:var(--personal);font-size:13px;font-weight:600}
+details summary{cursor:pointer;color:var(--sub);font-size:14px}
+.transcript{white-space:pre-wrap;font-size:14px;margin-top:8px}
+.recording{text-align:center;padding-top:60px}
+.recording .cat{font-size:18px;font-weight:700;margin-bottom:24px}
+.recording .time{font-size:56px;font-variant-numeric:tabular-nums;margin-bottom:30px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--danger);margin-right:8px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+.stop{width:110px;height:110px;border-radius:50%;background:var(--danger);color:#fff;font-size:18px;font-weight:700}
+.empty{text-align:center;color:var(--sub);padding:30px 0;font-size:14px}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.ph{position:relative}
+.ph img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;cursor:pointer;background:var(--line)}
+.ph-list .pa{border-top:1px solid var(--line);padding:10px 0}
+.ph-list .pa:first-child{border-top:none}
+.pa-row{display:flex;gap:10px;align-items:flex-start}
+.pa-row img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;cursor:pointer}
+.pa-text{white-space:pre-wrap;font-size:14px;margin-top:6px}
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:10}
+.viewer img{max-width:100%;max-height:100%}
+.add-photo{display:inline-block;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:14px}
+label.f{display:block;font-size:14px;color:var(--sub);margin:12px 0 4px}
+.hint{font-size:12px;color:var(--sub);margin-top:4px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ===== 설정값 ===== */
+const SUBS = {
+  company: ['거래처','구매','품질/클레임','영업/견적','생산/인력','경영/보고','기타'],
+  personal: ['가족','신앙','투자','건강/러닝','아이디어','기타']
+};
+const CAT = {company:'회사', personal:'개인'};
+const S = {
+  get(k,d=''){ try{ return localStorage.getItem('sm_'+k) ?? d }catch{ return d } },
+  set(k,v){ try{ localStorage.setItem('sm_'+k,v) }catch{} }
+};
+/* 골방 기도실 키 자동 가져오기 (같은 24aug30.github.io 주소일 때) */
+function gobangKey(name){ try{ const v = localStorage.getItem(name); return v ? String(JSON.parse(v)||'').trim() : ''; }catch{ return ''; } }
+function importGobangKeys(force){
+  let n = 0;
+  const o = gobangKey('k-openai'), c = gobangKey('k-claude');
+  if(o && (force || !S.get('openai'))){ S.set('openai', o); n++; }
+  if(c && (force || !S.get('anthropic'))){ S.set('anthropic', c); n++; }
+  return n;
+}
+importGobangKeys(false);
+const state = {view:'home', id:null, filter:{cat:'all', sub:'', q:''}};
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ===== 저장소 (IndexedDB: 녹음 파일까지 폰에 저장) ===== */
+let dbp;
+function db(){
+  return dbp ||= new Promise((res,rej)=>{
+    const r = indexedDB.open('sorimemo',1);
+    r.onupgradeneeded = () => r.result.createObjectStore('memos',{keyPath:'id'});
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function tx(mode, fn){
+  const d = await db();
+  return new Promise((res,rej)=>{
+    const t = d.transaction('memos',mode); const r = fn(t.objectStore('memos'));
+    t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error);
+  });
+}
+const put = m => tx('readwrite', s => s.put(m));
+const get = id => tx('readonly', s => s.get(id));
+const all = () => tx('readonly', s => s.getAll());
+const del = id => tx('readwrite', s => s.delete(id));
+try{ navigator.storage?.persist?.() }catch{}
+
+/* ===== 날짜 ===== */
+function kstDate(ts){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ts)); }
+function kstLabel(ts){ return new Date(ts).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}); }
+function kstFull(ts){ return new Date(ts).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'long',day:'numeric',weekday:'long'}) + ' ' + new Date(ts).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'}); }
+function nextDay(d){ const x = new Date(d+'T00:00:00Z'); x.setUTCDate(x.getUTCDate()+1); return x.toISOString().slice(0,10); }
+
+/* ===== AI: 전사 (OpenAI) ===== */
+async function transcribe(blob){
+  const key = S.get('openai'); if(!key) throw new Error('OpenAI 키가 없습니다. 설정에서 입력해 주세요.');
+  const ext = (blob.type||'').includes('mp4') ? 'm4a' : 'webm';
+  const fd = new FormData();
+  fd.append('file', blob, 'memo.'+ext);
+  fd.append('model', S.get('sttModel','whisper-1'));
+  fd.append('language','ko');
+  const vocab = S.get('vocab'); if(vocab) fd.append('prompt', vocab.slice(0,800));
+  const r = await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+key},body:fd});
+  if(!r.ok) throw new Error('전사 실패 ('+r.status+'): '+(await r.text()).slice(0,200));
+  return (await r.json()).text || '';
+}
+
+/* ===== AI: 정리·분류 (Claude) ===== */
+async function analyze(m){
+  const key = S.get('anthropic'); if(!key) throw new Error('Claude 키가 없습니다. 설정에서 입력해 주세요.');
+  const subs = SUBS[m.cat].join(', ');
+  const sys = `너는 사용자의 음성 메모를 정리하는 비서다. 이 메모는 사용자가 "${CAT[m.cat]}" 메모로 직접 분류했다.
+메모 작성 시각: ${kstFull(m.createdAt)} (한국 시간). "내일", "다음 주 화요일" 같은 표현은 이 시각 기준으로 실제 날짜로 바꿔라.
+${S.get('vocab') ? '자주 나오는 이름·용어(전사 오타 교정과 태그에 참고): '+S.get('vocab') : ''}
+
+반드시 아래 JSON만 출력하라. 설명·코드블록 금지.
+{"title":"15자 이내 제목","summary":"핵심 2~3문장","sub":"다음 중 하나: ${subs}","tags":["#거래처명이나 프로젝트명 등 고유명사 위주, 최대 4개"],"todos":[{"text":"할 일","due":"YYYY-MM-DD 또는 null"}],"events":[{"title":"일정 제목","date":"YYYY-MM-DD","start":"HH:MM 또는 null","end":"HH:MM 또는 null"}]}
+
+규칙:
+- 메모에 없는 내용은 지어내지 마라.
+- todos는 사용자가 해야 할 행동이 분명할 때만. 없으면 [].
+- events는 날짜가 특정되는 약속·미팅·마감만. 날짜가 애매하면 넣지 말고 todos로. 없으면 [].
+- 소분류가 애매하면 "기타".`;
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+    body: JSON.stringify({model:S.get('claudeModel','claude-sonnet-5-5'),max_tokens:1500,system:sys,messages:[{role:'user',content:memoSource(m)}]})
+  });
+  if(!r.ok) throw new Error('정리 실패 ('+r.status+'): '+(await r.text()).slice(0,200));
+  const txt = (await r.json()).content?.map(c=>c.text||'').join('') || '';
+  const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+  if(a<0||b<0) throw new Error('AI 응답을 읽지 못했습니다.');
+  return JSON.parse(txt.slice(a,b+1));
+}
+
+function memoSource(m){
+  let s = m.transcript ? '메모 원문:\n'+m.transcript : '';
+  const pa = (m.photos||[]).filter(p=>p.analysis);
+  if(pa.length) s += '\n\n첨부 사진 분석 내용:\n' + pa.map((p,i)=>`[사진 ${i+1}] ${p.analysis}`).join('\n');
+  return s.trim();
+}
+
+/* ===== AI: 사진 분석 (Claude, 수동) ===== */
+function blobToB64(blob){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(r.error); r.readAsDataURL(blob); }); }
+async function analyzePhotoAI(m, p){
+  const key = S.get('anthropic'); if(!key) throw new Error('Claude 키가 없습니다. 설정에서 입력해 주세요.');
+  const data = await blobToB64(p.blob);
+  const ctx = m.transcript ? '\n함께 기록된 메모 내용(참고용):\n'+m.transcript.slice(0,1500) : '';
+  const prompt = `이 사진은 사용자의 "${CAT[m.cat]}" 메모에 첨부된 사진이다.${ctx}
+${S.get('vocab') ? '\n자주 나오는 이름·용어: '+S.get('vocab') : ''}
+
+한국어로 정리하라. 형식:
+• 무엇인지: 한 줄 (예: 명함, 도면, 견적서, 제품 불량 사진, 회의 화이트보드, 영수증 등)
+• 핵심 내용: 사진 속 중요한 정보 3~6줄. 글자·숫자(치수, 금액, 날짜, 연락처, 품번 등)는 보이는 그대로 옮겨 적어라.
+• 확인 필요: 흐리거나 확실하지 않은 부분이 있으면 적고, 없으면 생략.
+사진에 없는 내용은 추측하지 마라.`;
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+    body: JSON.stringify({model:S.get('claudeModel','claude-sonnet-5-5'),max_tokens:1200,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:p.blob.type||'image/jpeg',data}},
+      {type:'text',text:prompt}
+    ]}]})
+  });
+  if(!r.ok) throw new Error('사진 분석 실패 ('+r.status+'): '+(await r.text()).slice(0,200));
+  return (await r.json()).content?.map(c=>c.text||'').join('').trim() || '';
+}
+
+/* ===== 사진 저장 (긴 변 1600px로 줄여 저장 공간·비용 절약) ===== */
+async function shrink(file){
+  try{
+    const bmp = await createImageBitmap(file,{imageOrientation:'from-image'});
+    const sc = Math.min(1, 1600/Math.max(bmp.width,bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width*sc); c.height = Math.round(bmp.height*sc);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    return await new Promise(res => c.toBlob(b => res(b||file),'image/jpeg',0.85));
+  }catch{ return file; }
+}
+async function filesToPhotos(files){
+  const out = [];
+  for(const f of files){ if(!f.type.startsWith('image/')) continue; out.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,6), blob:await shrink(f), analysis:'', status:'idle', error:null}); }
+  return out;
+}
+async function addPhotos(files){
+  const m = await get(state.id); const ps = await filesToPhotos(files);
+  m.photos = [...(m.photos||[]), ...ps]; await put(m); renderDetail();
+}
+async function analyzePhoto(pid){
+  let m = await get(state.id); let p = m.photos.find(x=>x.id===pid);
+  p.status = 'analyzing'; p.error = null; await put(m); renderDetail();
+  try{
+    const a = await analyzePhotoAI(m, p);
+    m = await get(m.id); p = m.photos.find(x=>x.id===pid); if(!p) return;
+    p.analysis = a; p.status = 'done';
+  }catch(e){
+    m = await get(m.id); p = m.photos.find(x=>x.id===pid); if(!p) return;
+    p.status = 'error'; p.error = String(e.message||e);
+  }
+  await put(m); if(state.view==='detail' && state.id===m.id) renderDetail();
+}
+async function delPhoto(pid){
+  if(!confirm('이 사진을 삭제할까요?')) return;
+  const m = await get(state.id); m.photos = m.photos.filter(x=>x.id!==pid); await put(m); renderDetail();
+}
+async function viewPhoto(pid){
+  const m = await get(state.id); const p = m.photos.find(x=>x.id===pid); if(!p) return;
+  const v = document.createElement('div'); v.className = 'viewer';
+  const url = URL.createObjectURL(p.blob);
+  v.innerHTML = `<img src="${url}">`; v.onclick = () => { URL.revokeObjectURL(url); v.remove(); };
+  document.body.appendChild(v);
+}
+
+async function processMemo(id){
+  let m = await get(id); if(!m) return;
+  const save = async () => { m.photos = (await get(id))?.photos ?? m.photos; await put(m); };
+  if(!m.transcript && !m.audio && !(m.photos||[]).some(p=>p.analysis)){ m.status='done'; await put(m); return refresh(id); }
+  try{
+    if(!m.transcript && m.audio){
+      m.status='transcribing'; m.error=null; await save(); refresh(id);
+      m.transcript = await transcribe(m.audio); await save();
+    }
+    m.status='analyzing'; m.error=null; await save(); refresh(id);
+    const r = await analyze(m);
+    Object.assign(m,{
+      title: r.title || '제목 없음',
+      summary: r.summary || '',
+      sub: SUBS[m.cat].includes(r.sub) ? r.sub : '기타',
+      tags: (r.tags||[]).map(t => t.startsWith('#') ? t : '#'+t),
+      todos: (r.todos||[]).map(t => ({text:t.text, due:t.due||null, done:false, added:false})),
+      events: (r.events||[]).map(e => ({title:e.title||'', date:e.date||'', start:e.start||'', end:e.end||'', added:false})),
+      status:'done', error:null
+    });
+    m.photos = (await get(id))?.photos ?? m.photos;
+    await put(m);
+  }catch(e){
+    m.status='error'; m.error=String(e.message||e);
+    m.photos = (await get(id))?.photos ?? m.photos;
+    await put(m);
+  }
+  refresh(id);
+}
+function refresh(id){
+  if(state.view==='detail' && state.id===id) renderDetail();
+  else if(state.view==='home') renderList();
+}
+
+/* ===== 구글 캘린더 (버튼 한 번 → 캘린더 등록 화면) ===== */
+function gcalUrl({title,date,start,end}, m){
+  const d = date.replace(/-/g,'');
+  let dates;
+  if(start){
+    let e = end;
+    if(!e){ const [h,mi] = start.split(':').map(Number); const t = Math.min(h*60+mi+60, 23*60+59); e = String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'); }
+    dates = `${d}T${start.replace(':','')}00/${d}T${e.replace(':','')}00`;
+  } else dates = `${d}/${nextDay(date).replace(/-/g,'')}`;
+  const p = new URLSearchParams({action:'TEMPLATE', text:`[${CAT[m.cat]}] ${title}`, dates, ctz:'Asia/Seoul', details:(m.summary||'')+'\n\n— 소리메모'});
+  return 'https://calendar.google.com/calendar/render?'+p.toString();
+}
+async function addEvent(i){
+  const m = await get(state.id); const ev = m.events[i];
+  if(!ev.date){ alert('날짜를 입력해 주세요.'); return; }
+  window.open(gcalUrl(ev,m),'_blank');
+  ev.added = true; await put(m); renderDetail();
+}
+async function addTodoCal(i){
+  const m = await get(state.id); const t = m.todos[i];
+  window.open(gcalUrl({title:'할 일: '+t.text, date:t.due, start:'', end:''}, m),'_blank');
+  t.added = true; await put(m); renderDetail();
+}
+
+/* ===== 녹음 ===== */
+let rec, chunks, stream, startT, timerI, recCat, cancelled;
+async function startRec(cat){
+  if(!S.get('openai') || !S.get('anthropic')){ alert('먼저 설정에서 API 키를 입력해 주세요.'); return renderSettings(); }
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ alert('마이크 권한이 필요합니다.'); return; }
+  const mime = ['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t));
+  rec = new MediaRecorder(stream, mime ? {mimeType:mime} : undefined);
+  chunks = []; recCat = cat; cancelled = false;
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = finishRec;
+  rec.start(1000); startT = Date.now();
+  state.view = 'record';
+  $app.innerHTML = `<div class="recording">
+    <div class="cat"><span class="badge ${cat}">${CAT[cat]}</span>메모 녹음 중</div>
+    <div class="time"><span class="dot"></span><span id="tm">00:00</span></div>
+    <button class="stop" onclick="stopRec()">완료</button>
+    <div style="margin-top:24px"><button class="icon-btn" onclick="cancelRec()">취소</button></div>
+  </div>`;
+  timerI = setInterval(()=>{ const s = Math.floor((Date.now()-startT)/1000); const el = document.getElementById('tm'); if(el) el.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }, 500);
+}
+function stopRec(){ clearInterval(timerI); rec?.state!=='inactive' && rec.stop(); }
+function cancelRec(){ if(!confirm('녹음을 버릴까요?')) return; cancelled = true; stopRec(); }
+async function finishRec(){
+  stream?.getTracks().forEach(t => t.stop());
+  if(cancelled){ return go('home'); }
+  const blob = new Blob(chunks,{type:rec.mimeType||'audio/webm'});
+  const m = {id:'m'+Date.now(), cat:recCat, createdAt:startT, audio:blob, duration:Math.round((Date.now()-startT)/1000), transcript:'', status:'transcribing', title:'', summary:'', sub:'', tags:[], todos:[], events:[]};
+  await put(m);
+  go('detail', m.id);
+  processMemo(m.id);
+}
+
+/* ===== 글·사진 메모 ===== */
+let draftPhotos = [];
+function renderText(cat){
+  state.view = 'text'; draftPhotos = [];
+  $app.innerHTML = `<header><button class="icon-btn" onclick="go('home')">← 뒤로</button><h1><span class="badge ${cat}">${CAT[cat]}</span>글·사진 메모</h1><span></span></header>
+  <textarea id="tx" placeholder="메모를 입력하세요 (사진만 저장해도 됩니다)"></textarea>
+  <div style="margin:12px 0">
+    <label class="add-photo">📷 사진 추가<input type="file" accept="image/*" multiple style="display:none" onchange="draftAdd(this.files);this.value=''"></label>
+  </div>
+  <div class="photos" id="dp"></div>
+  <button class="primary" onclick="saveText('${cat}')">저장</button>
+  <div class="hint">글은 저장하면 AI가 자동 정리합니다. 사진 분석은 메모 화면에서 직접 누를 때만 합니다.</div>`;
+}
+async function draftAdd(files){
+  draftPhotos.push(...await filesToPhotos(files));
+  const el = document.getElementById('dp'); if(!el) return;
+  el.innerHTML = draftPhotos.map((p,i)=>`<div class="ph"><img src="${URL.createObjectURL(p.blob)}" onclick="draftPhotos.splice(${i},1);draftAdd([])" title="눌러서 빼기"></div>`).join('');
+}
+async function saveText(cat){
+  const v = document.getElementById('tx').value.trim();
+  if(!v && !draftPhotos.length) return;
+  if(v && !S.get('anthropic')){ alert('설정에서 Claude 키를 입력해 주세요.'); return; }
+  const now = Date.now();
+  const m = {id:'m'+now, cat, createdAt:now, audio:null, transcript:v, photos:draftPhotos, status:v?'analyzing':'done',
+    title: v ? '' : '사진 메모', summary:'', sub: v ? '' : '기타', tags:[], todos:[], events:[]};
+  draftPhotos = [];
+  await put(m); go('detail', m.id); if(v) processMemo(m.id);
+}
+
+/* ===== 홈 ===== */
+function go(view, id){ state.view = view; state.id = id ?? null;
+  if(view==='home') renderHome(); else if(view==='detail') renderDetail(); else if(view==='settings') renderSettings(); }
+function renderHome(){
+  const f = state.filter;
+  const subs = f.cat==='all' ? [] : SUBS[f.cat];
+  $app.innerHTML = `<header><h1>소리메모</h1><button class="icon-btn" onclick="go('settings')">⚙ 설정</button></header>
+  <div class="rec-row">
+    <button class="rec-btn personal" onclick="startRec('personal')">🎙 개인</button>
+    <button class="rec-btn company" onclick="startRec('company')">🎙 회사</button>
+  </div>
+  <div class="text-row">
+    <button class="text-btn" onclick="renderText('personal')">✎📷 개인 글·사진</button>
+    <button class="text-btn" onclick="renderText('company')">✎📷 회사 글·사진</button>
+  </div>
+  <div class="tabs">${['all','personal','company'].map(c=>`<button class="tab ${f.cat===c?'on':''}" onclick="setCat('${c}')">${c==='all'?'전체':CAT[c]}</button>`).join('')}</div>
+  ${subs.length ? `<div class="chips"><button class="chip ${!f.sub?'on':''}" onclick="setSub('')">전체</button>${subs.map(s=>`<button class="chip ${f.sub===s?'on':''}" onclick="setSub('${s}')">${s}</button>`).join('')}</div>` : ''}
+  <input class="search" placeholder="검색 (제목·요약·원문·태그·사진 분석)" value="${esc(f.q)}" oninput="state.filter.q=this.value;renderList()">
+  <div id="list"></div>`;
+  renderList();
+}
+function setCat(c){ state.filter.cat = c; state.filter.sub = ''; renderHome(); }
+function setSub(s){ state.filter.sub = s; renderHome(); }
+async function renderList(){
+  const el = document.getElementById('list'); if(!el) return;
+  const f = state.filter, q = f.q.trim();
+  const memos = (await all()).sort((a,b)=>b.createdAt-a.createdAt)
+    .filter(m => (f.cat==='all'||m.cat===f.cat) && (!f.sub||m.sub===f.sub) &&
+      (!q || [m.title,m.summary,m.transcript,(m.tags||[]).join(' '),...(m.photos||[]).map(p=>p.analysis)].join(' ').includes(q)));
+  if(!memos.length){ el.innerHTML = `<div class="empty">메모가 없습니다</div>`; return; }
+  el.innerHTML = memos.map(m => {
+    const st = m.status==='transcribing' ? '<span class="status">전사 중…</span>' : m.status==='analyzing' ? '<span class="status">정리 중…</span>' : m.status==='error' ? '<span class="status err">오류 — 눌러서 재시도</span>' : '';
+    const openTodos = (m.todos||[]).filter(t=>!t.done).length;
+    return `<div class="item ${m.cat}" onclick="go('detail','${m.id}')">
+      <div class="t">${esc(m.title || '(정리 전)')}</div>
+      <div class="m"><span class="badge ${m.cat}">${CAT[m.cat]}${m.sub?' · '+esc(m.sub):''}</span>${kstLabel(m.createdAt)} ${openTodos?' · 할 일 '+openTodos:''}${(m.photos||[]).length?' · 📷'+m.photos.length:''} ${(m.tags||[]).map(esc).join(' ')} ${st}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== 메모 상세 ===== */
+async function renderDetail(){
+  const m = await get(state.id); if(!m) return go('home');
+  state.view = 'detail';
+  const busy = m.status==='transcribing' ? '음성을 글로 바꾸는 중…' : m.status==='analyzing' ? 'AI가 정리하는 중…' : '';
+  const audioUrl = m.audio ? URL.createObjectURL(m.audio) : '';
+  $app.innerHTML = `<header><button class="icon-btn" onclick="go('home')">← 목록</button><span class="badge ${m.cat}">${CAT[m.cat]}</span></header>
+  <div class="card">
+    <div style="font-size:20px;font-weight:700">${esc(m.title || '(정리 전)')}</div>
+    <div class="hint">${kstFull(m.createdAt)}${m.duration?' · '+Math.floor(m.duration/60)+'분 '+m.duration%60+'초':''}</div>
+    ${busy ? `<p class="status">${busy}</p>` : ''}
+    ${m.status==='error' ? `<p class="status err">${esc(m.error)}</p><button class="primary small" onclick="processMemo('${m.id}')">다시 시도</button>` : ''}
+    ${m.summary ? `<p style="margin:10px 0 0">${esc(m.summary)}</p>` : ''}
+  </div>
+  ${photoCard(m)}
+  ${m.status==='done' ? `
+  <div class="card"><h3>분류</h3>
+    <div class="row">
+      <select style="width:auto" onchange="upd('sub',this.value)">${SUBS[m.cat].map(s=>`<option ${m.sub===s?'selected':''}>${s}</option>`).join('')}</select>
+      <button class="ghost small" onclick="switchCat()">${m.cat==='company'?'개인':'회사'}으로 옮기기</button>
+    </div>
+    <label class="f">태그 (쉼표로 구분)</label>
+    <input value="${esc((m.tags||[]).join(', '))}" onchange="upd('tags',this.value.split(',').map(s=>s.trim()).filter(Boolean).map(t=>t.startsWith('#')?t:'#'+t))">
+  </div>
+  <div class="card"><h3>할 일</h3>
+    ${(m.todos||[]).length ? m.todos.map((t,i)=>`<div class="todo ${t.done?'done':''}">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTodo(${i})">
+      <div style="flex:1"><span>${esc(t.text)}</span>${t.due?`<div class="hint">마감 ${t.due} ${t.added?'<span class="added">✓ 캘린더</span>':`<button class="ghost small" onclick="addTodoCal(${i})">📅 캘린더</button>`}</div>`:''}</div>
+    </div>`).join('') : '<div class="hint">없음</div>'}
+  </div>
+  <div class="card"><h3>일정 후보</h3>
+    ${(m.events||[]).length ? m.events.map((e,i)=>`<div class="ev">
+      <input value="${esc(e.title)}" onchange="updEv(${i},'title',this.value)">
+      <div class="grid">
+        <input type="date" value="${esc(e.date)}" onchange="updEv(${i},'date',this.value)">
+        <input type="time" value="${esc(e.start)}" onchange="updEv(${i},'start',this.value)">
+        <input type="time" value="${esc(e.end)}" onchange="updEv(${i},'end',this.value)">
+      </div>
+      ${e.added ? `<span class="added">✓ 캘린더 등록 화면 열었음</span> <button class="icon-btn small" onclick="addEvent(${i})">다시 열기</button>` : `<button class="primary small" onclick="addEvent(${i})">📅 캘린더에 추가</button>`}
+    </div>`).join('') : '<div class="hint">없음</div>'}
+  </div>` : ''}
+  <div class="card">
+    ${audioUrl ? `<audio controls src="${audioUrl}" style="width:100%;margin-bottom:8px"></audio>` : ''}
+    <details ${m.status!=='done'?'open':''}><summary>원문 보기 / 고치기</summary>
+      <textarea id="tr" style="margin-top:8px">${esc(m.transcript)}</textarea>
+      <button class="ghost small" style="margin-top:8px" onclick="saveTranscript()">원문 저장 후 다시 정리</button>
+    </details>
+  </div>
+  <div class="row"><button class="danger" onclick="removeMemo()">메모 삭제</button></div>`;
+}
+function photoCard(m){
+  const ps = m.photos||[];
+  const hasA = ps.some(p=>p.analysis);
+  return `<div class="card"><h3>사진 ${ps.length?ps.length+'장':''}</h3>
+    <div class="ph-list">${ps.map(p=>{
+      const url = URL.createObjectURL(p.blob);
+      const btn = p.status==='analyzing' ? '<span class="status">분석 중…</span>'
+        : `<button class="${p.analysis?'ghost':'primary'} small" onclick="analyzePhoto('${p.id}')">${p.analysis?'다시 분석':'🔍 AI 분석'}</button>`;
+      return `<div class="pa"><div class="pa-row">
+        <img src="${url}" onclick="viewPhoto('${p.id}')">
+        <div style="flex:1"><div class="row">${btn}<button class="icon-btn small" onclick="delPhoto('${p.id}')">삭제</button></div>
+          ${p.status==='error'?`<div class="status err">${esc(p.error)}</div>`:''}
+        </div></div>
+        ${p.analysis?`<div class="pa-text">${esc(p.analysis)}</div>`:''}
+      </div>`;
+    }).join('')}</div>
+    <div class="row" style="margin-top:8px">
+      <label class="add-photo">📷 사진 추가<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(this.files)"></label>
+      ${hasA && m.status!=='analyzing' && m.status!=='transcribing' ? `<button class="ghost small" onclick="processMemo('${m.id}')">사진 내용으로 메모 정리</button>` : ''}
+    </div>
+  </div>`;
+}
+async function upd(k,v){ const m = await get(state.id); m[k] = v; await put(m); }
+async function updEv(i,k,v){ const m = await get(state.id); m.events[i][k] = v; await put(m); }
+async function toggleTodo(i){ const m = await get(state.id); m.todos[i].done = !m.todos[i].done; await put(m); renderDetail(); }
+async function switchCat(){ const m = await get(state.id); m.cat = m.cat==='company'?'personal':'company'; if(!SUBS[m.cat].includes(m.sub)) m.sub='기타'; await put(m); renderDetail(); }
+async function saveTranscript(){ const m = await get(state.id); m.transcript = document.getElementById('tr').value; await put(m); processMemo(m.id); }
+async function removeMemo(){ if(!confirm('이 메모를 삭제할까요? 녹음·사진 파일도 함께 지워집니다.')) return; await del(state.id); go('home'); }
+
+/* ===== 설정 ===== */
+function renderSettings(){
+  state.view = 'settings';
+  $app.innerHTML = `<header><button class="icon-btn" onclick="go('home')">← 뒤로</button><h1>설정</h1><span></span></header>
+  <div class="card">
+    <label class="f">OpenAI API 키 (음성 → 글)</label>
+    <input type="password" id="k1" value="${esc(S.get('openai'))}" placeholder="sk-...">
+    <label class="f">Claude API 키 (정리·분류)</label>
+    <input type="password" id="k2" value="${esc(S.get('anthropic'))}" placeholder="sk-ant-...">
+    <div class="hint">키는 이 폰의 브라우저에만 저장되고, 코드나 GitHub에는 들어가지 않습니다.</div>
+    <div style="margin-top:8px"><button class="ghost small" onclick="if(importGobangKeys(true)){alert('골방 키를 가져왔습니다.');renderSettings()}else alert('골방 키를 찾지 못했습니다. 골방과 같은 주소(24aug30.github.io)에서 열었는지 확인해 주세요.')">골방 키 가져오기</button></div>
+    <label class="f">자주 나오는 이름·용어</label>
+    <textarea id="vc" style="min-height:90px" placeholder="예: 하나스프링, CPA, 기품원, 52CrMoV4, 볼스터 스프링">${esc(S.get('vocab'))}</textarea>
+    <div class="hint">전사 오타 교정과 태그 정확도가 올라갑니다.</div>
+    <label class="f">전사 모델</label>
+    <input id="m1" value="${esc(S.get('sttModel','whisper-1'))}">
+    <label class="f">정리 모델</label>
+    <input id="m2" value="${esc(S.get('claudeModel','claude-sonnet-5-5'))}">
+    <div style="margin-top:14px"><button class="primary" onclick="saveSettings()">저장</button></div>
+  </div>
+  <div class="card"><h3>백업</h3>
+    <div class="hint" style="margin-bottom:8px">메모 내용(녹음·사진 파일 제외, 사진 분석 글은 포함)을 파일로 내보내고 가져옵니다.</div>
+    <div class="row"><button class="ghost small" onclick="exportJson()">내보내기</button>
+    <label class="ghost small" style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer">가져오기<input type="file" accept=".json" style="display:none" onchange="importJson(this.files[0])"></label></div>
+  </div>`;
+}
+function saveSettings(){
+  S.set('openai', document.getElementById('k1').value.trim());
+  S.set('anthropic', document.getElementById('k2').value.trim());
+  S.set('vocab', document.getElementById('vc').value.trim());
+  S.set('sttModel', document.getElementById('m1').value.trim() || 'whisper-1');
+  S.set('claudeModel', document.getElementById('m2').value.trim() || 'claude-sonnet-5-5');
+  alert('저장했습니다.'); go('home');
+}
+async function exportJson(){
+  const data = (await all()).map(({audio,...r}) => ({...r, photos:(r.photos||[]).map(({blob,...p})=>p)}));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));
+  a.download = 'sorimemo-backup-'+kstDate(Date.now())+'.json'; a.click();
+}
+async function importJson(file){
+  if(!file) return;
+  try{ const arr = JSON.parse(await file.text()); for(const m of arr){ if(m.id && !(await get(m.id))) await put({...m, audio:null, photos:[]}); } alert(arr.length+'개 확인, 새 메모를 가져왔습니다.'); go('home'); }
+  catch(e){ alert('가져오기 실패: '+e.message); }
+}
+
+/* 앱을 닫았다 열었을 때 멈춘 처리 이어서 */
+(async()=>{ for(const m of await all()){
+  if((m.photos||[]).some(p=>p.status==='analyzing')){ m.photos.forEach(p=>{ if(p.status==='analyzing') p.status='idle'; }); await put(m); }
+  if(m.status==='transcribing'||m.status==='analyzing') processMemo(m.id);
+} })();
+go('home');
+</script>
+</body>
+</html>
