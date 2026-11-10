@@ -1,5 +1,5 @@
 // 소리메모: 앱 화면을 폰에 저장해 인터넷이 약해도 열리게 함 (AI 호출은 그대로 통과)
-const CACHE = "sorimemo-v1";
+const CACHE = "sorimemo-v3";
 const FILES = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
