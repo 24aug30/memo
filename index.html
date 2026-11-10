@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#14171c">
 <meta name="mobile-web-app-capable" content="yes">
 <title>소리메모</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
   --bg:#f4f5f7;--card:#fff;--ink:#1b1e24;--sub:#6b7280;--line:#e3e6ea;
@@ -556,6 +559,7 @@ async function importJson(file){
   if(m.status==='transcribing'||m.status==='analyzing') processMemo(m.id);
 } })();
 go('home');
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
